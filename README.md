@@ -1,9 +1,7 @@
 # kmeans-color-wasm
 
 k-means clustering for color images. Uses the kmeans_colors crate from
-here
-
-[//]: # todo: add crate URL()
+https://crates.io/crates/kmeans_colors
 
 ## About
 
