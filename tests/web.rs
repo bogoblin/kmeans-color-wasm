@@ -9,8 +9,6 @@ wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen_test]
 fn rgb_to_hex_test() {
-    use palette::rgb::Rgb;
     use kmeans_color_wasm::rgb_to_hex;
-    let rgb = Rgb::new(0.25, 0.5, 0.753);
-    assert_eq!(rgb_to_hex(rgb), "#4080c0");
+    assert_eq!(rgb_to_hex(0x40, 0x80, 0xc0), "#4080c0");
 }
