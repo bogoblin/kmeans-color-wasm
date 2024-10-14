@@ -1,13 +1,14 @@
 mod utils;
 
-use kmeans_colors::{Calculate, CentroidData, MapColor, Sort};
+use kmeans_colors::{CentroidData, Kmeans, Sort};
 use palette::cast::from_component_slice;
 use palette::rgb::Rgb;
-use palette::{IntoColor, Srgb, Srgba, WithAlpha};
+use palette::{IntoColor, Lab, Srgb, Srgba, WithAlpha};
 use std::cmp::Ordering;
 use std::cmp::Ordering::{Equal, Greater, Less};
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlImageElement, ImageData};
+use crate::utils::set_panic_hook;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -17,18 +18,46 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
 pub fn get_kmeans(options: GetKmeansOptions) -> Result<Vec<JsCentroidData>, JsValue> {
-    let colors = options.rgb_vec()?;
-    let result = kmeans_colors::get_kmeans(
-        options.k,
-        options.max_iter,
-        options.converge,
-        false,
-        &colors,
-        options.seed()
-    );
-    let centroids = Srgb::sort_indexed_colors(&result.centroids, &result.indices)
-        .into_iter().map(|centroid| JsCentroidData::from(centroid)).collect();
-    Ok(centroids)
+    set_panic_hook();
+
+    match options.color_space {
+        None | Some(ColorSpace::RGB) => {
+            let colors = options.rgb_vec()?;
+            let result = kmeans_colors::get_kmeans(
+                options.k,
+                options.max_iter,
+                options.converge,
+                false,
+                &colors,
+                options.seed()
+            );
+            let centroids = Srgb::sort_indexed_colors(&result.centroids, &result.indices)
+                .into_iter().map(|centroid| JsCentroidData::from(centroid)).collect();
+            Ok(centroids)
+        }
+        Some(ColorSpace::LAB) => {
+            let colors = options.lab_vec()?;
+            let result = kmeans_colors::get_kmeans(
+                options.k,
+                options.max_iter,
+                options.converge,
+                false,
+                &colors,
+                options.seed()
+            );
+
+            let result = Kmeans {
+                score: result.score,
+                centroids: result.centroids.iter().map(|lab| (*lab).into_color()).collect(),
+                indices: result.indices
+            };
+
+            let centroids = Srgb::sort_indexed_colors(&result.centroids, &result.indices)
+                .into_iter().map(|centroid| JsCentroidData::from(centroid)).collect();
+            Ok(centroids)
+        }
+        Some(ColorSpace::__Invalid) => Err(JsValue::from_str("Invalid color space. Please use RGB or LAB"))
+    }
 }
 
 #[wasm_bindgen]
@@ -56,14 +85,14 @@ impl GetKmeansOptions {
 
         Ok(rgba)
     }
-    // fn lab_vec(&self) -> Result<Vec<Lab>, JsValue> {
-    //     let lab : Vec<Lab> = from_component_slice::<Srgba<u8>>(&self.rgb_bytes()?)
-    //         .iter()
-    //         .map(|x| x.without_alpha().into_format())
-    //         .collect();
-    //
-    //     Ok(lab)
-    // }
+
+    fn lab_vec(&self) -> Result<Vec<Lab>, JsValue> {
+        let lab : Vec<Lab> = self.rgb_vec()?.into_iter()
+            .map(|rgb| rgb.into_color())
+            .collect();
+
+        Ok(lab)
+    }
 
     fn rgb_bytes(&self) -> Result<Vec<u8>, JsValue> {
         let document = web_sys::window().unwrap().document().unwrap();
