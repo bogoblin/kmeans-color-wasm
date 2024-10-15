@@ -1,11 +1,11 @@
 mod utils;
 
+use std::cmp::Ordering;
+use js_sys::Math::random;
 use kmeans_colors::{CentroidData, Kmeans, Sort};
 use palette::cast::from_component_slice;
 use palette::rgb::Rgb;
 use palette::{IntoColor, Lab, Srgb, Srgba, WithAlpha};
-use std::cmp::Ordering;
-use std::cmp::Ordering::{Equal, Greater, Less};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlImageElement, ImageData};
@@ -19,48 +19,46 @@ use crate::utils::set_panic_hook;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn get_kmeans(image: JsValue, options: GetKmeansOptions) -> Result<Vec<JsCentroidData>, JsValue> {
+pub fn get_kmeans(image: JsValue, options: GetKmeansOptions) -> Result<Vec<Centroid>, JsValue> {
     set_panic_hook();
 
-    match options.color_space {
+    let result = match options.color_space {
         None | Some(ColorSpace::RGB) => {
             let colors = options.rgb_vec(image)?;
-            let result = kmeans_colors::get_kmeans(
-                options.k,
-                options.max_iter,
-                options.converge,
+            kmeans_colors::get_kmeans(
+                options.k(),
+                options.max_iterations(),
+                options.converge(),
                 false,
                 &colors,
                 options.seed()
-            );
-            let mut centroids: Vec<_> = Srgb::sort_indexed_colors(&result.centroids, &result.indices)
-                .into_iter().map(|centroid| JsCentroidData::from(centroid)).collect();
-            centroids.sort();
-            Ok(centroids)
+            )
         }
         Some(ColorSpace::LAB) => {
             let colors = options.lab_vec(image)?;
             let result = kmeans_colors::get_kmeans(
-                options.k,
-                options.max_iter,
-                options.converge,
+                options.k(),
+                options.max_iterations(),
+                options.converge(),
                 false,
                 &colors,
                 options.seed()
             );
 
-            let result = Kmeans {
+            Kmeans {
                 score: result.score,
                 centroids: result.centroids.iter().map(|lab| (*lab).into_color()).collect(),
                 indices: result.indices
-            };
-
-            let mut centroids: Vec<_> = Srgb::sort_indexed_colors(&result.centroids, &result.indices)
-                .into_iter().map(|centroid| JsCentroidData::from(centroid)).collect();
-            centroids.sort();
-            Ok(centroids)
+            }
         }
+    };
+    let mut centroids: Vec<_> = Srgb::sort_indexed_colors(&result.centroids, &result.indices)
+        .into_iter().map(Centroid::from).collect();
+    match options.sorting() {
+        CentroidSort::Percentage => centroids.sort_by(|a, b| a.percentage.partial_cmp(&b.percentage).unwrap_or(Ordering::Equal)),
+        CentroidSort::Luminosity => centroids.sort_by(|a, b| a.lab[0].partial_cmp(&b.lab[0]).unwrap_or(Ordering::Equal))
     }
+    Ok(centroids)
 }
 
 #[derive(Tsify, Serialize, Deserialize)]
@@ -70,14 +68,28 @@ pub enum ColorSpace {
 }
 
 #[derive(Tsify, Serialize, Deserialize)]
+pub enum CentroidSort {
+    #[tsify(name = "percentage")]
+    Percentage,
+    #[tsify(name = "luminosity")]
+    Luminosity,
+}
+
+#[derive(Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct GetKmeansOptions {
-    k: usize,
-    max_iter: usize,
-    converge: f32,
+    #[tsify(optional)]
+    k: Option<usize>,
+    #[tsify(optional)]
+    max_iter: Option<usize>,
+    #[tsify(optional)]
+    converge: Option<f32>,
     #[tsify(optional)]
     seed: Option<u64>,
+    #[tsify(optional)]
     color_space: Option<ColorSpace>,
+    #[tsify(optional)]
+    sort: Option<CentroidSort>,
 }
 
 impl GetKmeansOptions {
@@ -132,20 +144,54 @@ impl GetKmeansOptions {
     }
 
     fn seed(&self) -> u64 {
-        self.seed.unwrap_or(0)
+        self.seed.unwrap_or(( random() * (2^32) as f64 ) as u64)
+    }
+
+    fn k(&self) -> usize {
+        self.k.unwrap_or(8)
+    }
+
+    fn max_iterations(&self) -> usize {
+        self.max_iter.unwrap_or(20)
+    }
+
+    fn converge(&self) -> f32 {
+        match self.converge {
+            Some(converge) => converge,
+            None => {
+                match self.color_space() {
+                    ColorSpace::RGB => 0.0025,
+                    ColorSpace::LAB => 5.0
+                }
+            }
+        }
+    }
+
+    fn color_space(&self) -> ColorSpace {
+        match self.color_space {
+            None | Some(ColorSpace::RGB) => ColorSpace::RGB,
+            Some(ColorSpace::LAB) => ColorSpace::LAB
+        }
+    }
+
+    fn sorting(&self) -> CentroidSort {
+        match self.sort {
+            None | Some(CentroidSort::Percentage) => CentroidSort::Percentage,
+            Some(CentroidSort::Luminosity) => CentroidSort::Luminosity
+        }
     }
 }
 
 
 #[wasm_bindgen(getter_with_clone)]
-pub struct JsCentroidData {
+pub struct Centroid {
     pub rgb_hex: String,
     pub rgb: Vec<f64>,
     pub lab: Vec<f64>,
     pub percentage: f64,
 }
 
-impl JsCentroidData {
+impl Centroid {
     fn from(centroid_data: CentroidData<Srgb>) -> Self {
         let percentage = centroid_data.percentage as f64;
         let rgb = centroid_data.centroid.clone().into_format::<u8>();
@@ -163,30 +209,4 @@ impl JsCentroidData {
 
 pub fn rgb_to_hex(r: u8, g: u8, b: u8) -> String {
     format!("#{r:02x}{g:02x}{b:02x}")
-}
-
-impl Eq for JsCentroidData {}
-
-impl PartialEq<Self> for JsCentroidData {
-    fn eq(&self, other: &Self) -> bool {
-        self.percentage == other.percentage
-    }
-}
-
-impl PartialOrd<Self> for JsCentroidData {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.percentage > other.percentage {
-            Some(Greater)
-        } else if self.percentage < other.percentage {
-            Some(Less)
-        } else {
-            Some(Equal)
-        }
-    }
-}
-
-impl Ord for JsCentroidData {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Equal)
-    }
 }
