@@ -21,8 +21,9 @@ function App() {
 
     return (
         <form className={"h-screen dark:bg-gray-900 dark:text-gray-200 flex flex-col"}>
-            <h1 className={"text-4xl font-bold m-3 text-center"}>Create Palette from Image</h1>
-            <div className={"min-h-0 relative"}>
+            <h1 className={"text-4xl font-bold m-3 text-center flex-grow-0" +
+                ""}>Create Palette from Image</h1>
+            <div className={"min-h-0 relative max-h-full flex-grow"}>
                 <input className={"absolute opacity-0 w-full h-full z-20 cursor-pointer"}
                        id={"imageUpload"}
                        type={"file"} onChange={event => {
@@ -41,10 +42,10 @@ function App() {
                         <p className={"text-base"}>or click to select a file</p>
                     </div>
                 </div>
-                <label className={"h-full flex flex-row justify-evenly"}
+                <label className={"h-full"}
                        htmlFor={"imageUpload"}>
                     {imageUrl ?
-                        <img className={"min-h-0 h-full w-auto"}
+                        <img className={"min-h-0 w-full h-full object-contain"}
                              crossOrigin={"anonymous"}
                              src={imageUrl}
                              ref={imageElement}
@@ -53,7 +54,7 @@ function App() {
                 </label>
             </div>
             <Palette palette={palette}/>
-            <p className={"p-2 text-right italic"}>done in {timeTaken.toFixed(2)}ms</p>
+            <p className={"p-2 text-right italic flex-grow-0"}>done in {timeTaken.toFixed(2)}ms</p>
             <Controls kMeansOptions={kMeansOptions} setKMeansOptions={setKMeansOptions}/>
         </form>
     )
@@ -63,10 +64,9 @@ function Controls({kMeansOptions, setKMeansOptions}: {
     kMeansOptions: GetKmeansOptions,
     setKMeansOptions: (o: GetKmeansOptions) => void
 }) {
-    return <div className={"grid gap-2 text-xl text-right"}
-                style={{gridTemplateColumns: "1fr auto auto 1fr"}}
+    return <div className={" text-xl text-right flex flex-row justify-evenly"}
     >
-        <label htmlFor={"k"} className={"col-start-2 col-span-2 grid grid-cols-subgrid"}>Clusters:
+        <label htmlFor={"k"} className={""}>Clusters:
         <input className={"bg-gray-700 p-1 rounded m-1 w-20"}
                id={"k"}
                type={"number"} value={kMeansOptions.k}
@@ -77,7 +77,7 @@ function Controls({kMeansOptions, setKMeansOptions}: {
                    setKMeansOptions(options);
                }}/>
         </label>
-        <label htmlFor={"max_iterations"} className={"col-start-2 col-span-2 grid grid-cols-subgrid"}>Iterations:
+        <label htmlFor={"max_iterations"} className={""}>Iterations:
         <input className={"bg-gray-700 p-1 rounded m-1 w-20"}
                id={"max_iterations"}
                type={"number"} value={kMeansOptions.max_iter}
@@ -89,9 +89,9 @@ function Controls({kMeansOptions, setKMeansOptions}: {
                    setKMeansOptions(options);
                }}/>
         </label>
-        <div className={"col-start-2 col-span-2 grid grid-cols-subgrid"}>
-            <p>Color space:</p>
-            <div>
+        <div className={""}>
+            <label className={"inline-block"}>Color space:</label>
+            <div className={"inline-block"}>
                 <label className={"p-1"}>
                     <input type={"radio"} name={"color_space"} value={"RGB"}
                            checked={kMeansOptions.color_space === "RGB"}
@@ -118,12 +118,12 @@ function Controls({kMeansOptions, setKMeansOptions}: {
 }
 
 function Palette({palette}: { palette: Centroid[] }) {
-    return <div id={"palette"} className={"flex w-full h-20 flex-shrink-0"}>
+    return <div id={"palette"} className={"flex w-full min-h-20 flex-shrink-0 flex-grow"}>
         {palette.map((centroid, i) => {
             return <div key={i}
                         className={"h-full flex flex-row justify-evenly"}
                         style={{backgroundColor: centroid.rgb_hex, flexGrow: centroid.percentage}}>
-                <div className={"w-0 overflow-hidden color-info font-mono text-nowrap text-sm flex flex-col justify-around"}>
+                <div className={"w-0 overflow-hidden color-info font-mono text-nowrap text-sm flex flex-col justify-center"}>
                     <Copiable text={( centroid.percentage * 100 ).toPrecision(2)+"%"}/>
                     <Copiable text={`rgb(${[...centroid.rgb].map(v => v.toFixed(0)).join(', ')})`}/>
                     <Copiable text={`lab(${[...centroid.lab].map(v => v.toFixed(2)).join(', ')})`}/>
