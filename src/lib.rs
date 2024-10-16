@@ -194,7 +194,7 @@ pub struct Centroid {
 impl Centroid {
     fn from(centroid_data: CentroidData<Srgb>) -> Self {
         let percentage = centroid_data.percentage as f64;
-        let rgb = centroid_data.centroid.clone().into_format::<u8>();
+        let rgb = centroid_data.centroid.into_format::<u8>();
         let (r,g,b) = rgb.into_components();
         let lab: Lab = centroid_data.centroid.into_color();
         let (l,a,bl) = lab.into_components();
