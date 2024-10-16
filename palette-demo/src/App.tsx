@@ -125,8 +125,8 @@ function Palette({palette}: { palette: Centroid[] }) {
                         style={{backgroundColor: centroid.rgb_hex, flexGrow: centroid.percentage}}>
                 <div className={"w-0 overflow-hidden color-info font-mono text-nowrap text-sm flex flex-col justify-around"}>
                     <Copiable text={( centroid.percentage * 100 ).toPrecision(2)+"%"}/>
-                    <Copiable text={`rgb(${centroid.rgb.map(v => v.toFixed(0)).join(', ')})`}/>
-                    <Copiable text={`lab(${centroid.lab.map(v => v.toFixed(2)).join(', ')})`}/>
+                    <Copiable text={`rgb(${[...centroid.rgb].map(v => v.toFixed(0)).join(', ')})`}/>
+                    <Copiable text={`lab(${[...centroid.lab].map(v => v.toFixed(2)).join(', ')})`}/>
                 </div>
             </div>
         })}
