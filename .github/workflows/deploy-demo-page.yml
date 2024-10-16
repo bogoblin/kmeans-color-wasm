@@ -17,12 +17,12 @@ jobs:
         uses: actions/setup-node@v3
 
       - name: Install dependencies
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: "palette-demo"
+        run: "npm install"
+        working-directory: ./palette-demo
 
       - name: Build project
-        run: "npm run build --workspace=palette-demo"
+        run: "npm run build"
+        working-directory: ./palette-demo
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v3
