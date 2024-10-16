@@ -9,32 +9,40 @@ function App() {
         console.log("Updating palette.")
         setPalette(get_kmeans(imageElement, {
             k: 5,
+            max_iter: 10000,
         }).reverse());
     }, [])
     return (
         <div className={"h-screen dark:bg-gray-900 dark:text-gray-200"}>
-            <form >
-                <input type={"file"} name={"imageUpload"} onChange={event => {
+            <form className={"h-full"}>
+                <input className={"hidden"}
+                       id={"imageUpload"}
+                       type={"file"} name={"imageUpload"} onChange={event => {
                     const file = event.target.files?.item(0) || null;
                     if (file) {
                         setImageUrl(URL.createObjectURL(file));
                     }
                 }}/>
+                <label htmlFor={"imageUpload"} className={"flex flex-col items-center max-h-full"}>
+                    {imageUrl ?
+                        <img className={"min-h-0"}
+                             crossOrigin={"anonymous"}
+                             src={imageUrl}
+                             onLoad={event => updatePalette(event.currentTarget)}
+                        /> : ''}
+                    {palette ? <Palette palette={palette}/> : ''}
+                </label>
             </form>
-            {imageUrl ?
-            <img crossOrigin={"anonymous"}
-                 src={imageUrl}
-                 onLoad={event => updatePalette(event.currentTarget)}
-            /> : ''}
-            {palette ? <Palette palette={palette}/> : ''}
         </div>
     )
 }
 
 function Palette({palette}: { palette: Centroid[] }) {
-    return <div className={"flex"}>
-        {palette.map(( centroid, i ) => {
-            return <div key={i} className={"h-24"} style={{backgroundColor: centroid.rgb_hex, flexGrow: centroid.percentage}}></div>
+    return <div className={"flex w-full h-20 flex-shrink-0"}>
+        {palette.map((centroid, i) => {
+            return <div key={i}
+                        className={"h-full"}
+                        style={{backgroundColor: centroid.rgb_hex, flexGrow: centroid.percentage}}></div>
         })}
     </div>
 }
