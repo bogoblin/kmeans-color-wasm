@@ -10,7 +10,7 @@ function App() {
         max_iter: 50,
         converge: undefined,
         color_space: "RGB",
-        sort: "Percentage"
+        sort: "Luminosity"
     });
 
     const benchmarkStart = performance.now();
