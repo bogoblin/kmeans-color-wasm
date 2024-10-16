@@ -1,39 +1,55 @@
-import {useCallback, useState} from 'react'
-import {Centroid, get_kmeans} from "kmeans-color-wasm";
+import {useRef, useState} from 'react'
+import {Centroid, GetKmeansOptions, get_kmeans} from "kmeans-color-wasm";
 
 function App() {
     const [imageUrl, setImageUrl] = useState<string | null>("https://cat-milk.github.io/Anime-Girls-Holding-Programming-Books/static/2718956f4a96f79022611b89d4e65687/47126/Chito_Saving_Burning_Mastering_Typescript.png");
-    const [palette, setPalette] = useState<Centroid[] | null>(null);
+    const imageElement = useRef<HTMLImageElement>(null);
+    const [loading, setLoading] = useState<"loading" | "loaded">("loading");
+    const [kMeansOptions, setKMeansOptions] = useState<GetKmeansOptions>({
+        k: 5,
+        max_iter: 50,
+        converge: 0.0025,
+        color_space: "RGB",
+        sort: "Percentage"
+    });
 
-    const updatePalette = useCallback((imageElement: HTMLImageElement) => {
-        console.log("Updating palette.")
-        setPalette(get_kmeans(imageElement, {
-            k: 5,
-            max_iter: 10000,
-        }).reverse());
-    }, [])
+    const palette = loading === "loaded"
+        ? get_kmeans(imageElement.current, kMeansOptions).reverse()
+        : null;
+
     return (
-        <div className={"h-screen dark:bg-gray-900 dark:text-gray-200"}>
-            <form className={"h-full"}>
-                <input className={"hidden"}
+        <form className={"h-screen dark:bg-gray-900 dark:text-gray-200 flex flex-col"}
+              style={{gridTemplateRows: "1fr auto auto"}}
+        >
+            <div className={"min-h-0 relative"}>
+                <input className={"absolute opacity-0 w-full h-full"}
                        id={"imageUpload"}
-                       type={"file"} name={"imageUpload"} onChange={event => {
+                       type={"file"} onChange={event => {
                     const file = event.target.files?.item(0) || null;
                     if (file) {
+                        setLoading("loading");
                         setImageUrl(URL.createObjectURL(file));
                     }
                 }}/>
-                <label htmlFor={"imageUpload"} className={"flex flex-col items-center max-h-full"}>
-                    {imageUrl ?
-                        <img className={"min-h-0"}
-                             crossOrigin={"anonymous"}
-                             src={imageUrl}
-                             onLoad={event => updatePalette(event.currentTarget)}
-                        /> : ''}
-                    {palette ? <Palette palette={palette}/> : ''}
+                <label className={"h-full flex flex-row justify-evenly"}
+                    htmlFor={"imageUpload"}>
+                {imageUrl ?
+                    <img className={"min-h-0 h-full w-auto"}
+                         crossOrigin={"anonymous"}
+                         src={imageUrl}
+                         ref={imageElement}
+                         onLoad={() => setLoading("loaded")}
+                    /> : ''}
                 </label>
-            </form>
-        </div>
+            </div>
+            {palette ? <Palette palette={palette}/> : ''}
+            <input className={"bg-gray-700 p-1 rounded m-1"}
+                   type={"number"} name={"k"} value={kMeansOptions.k} onChange={event => {
+                const options = {...kMeansOptions};
+                options.k = parseInt(event.target.value);
+                setKMeansOptions(options);
+            }}/>
+        </form>
     )
 }
 
