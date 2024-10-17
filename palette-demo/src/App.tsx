@@ -20,7 +20,7 @@ function App() {
     const timeTaken = performance.now() - benchmarkStart;
 
     return (
-        <form className={"h-screen dark:bg-gray-900 dark:text-gray-200 flex flex-col"}>
+        <form className={"flex flex-col"}>
             <h1 className={"text-4xl font-bold m-3 text-center flex-grow-0" +
                 ""}>Create Palette from Image</h1>
             <div className={"min-h-0 relative max-h-full flex-grow"}>
@@ -33,7 +33,7 @@ function App() {
                         setImageUrl(URL.createObjectURL(file));
                     }
                 }}/>
-                <div className={"absolute w-full h-full bg-gray-700 flex"}
+                <div className={"absolute w-full h-full bg-black flex"}
                 >
                     <div className={"text-center flex-grow " +
                         " m-10 p-10 border-8 border-dashed rounded-3xl border-opacity-60 " +
@@ -64,57 +64,60 @@ function Controls({kMeansOptions, setKMeansOptions}: {
     kMeansOptions: GetKmeansOptions,
     setKMeansOptions: (o: GetKmeansOptions) => void
 }) {
-    return <div className={" text-xl text-right flex flex-row justify-evenly"}
+    const exampleCode = `const centroids = get_kmeans(image, ${JSON.stringify(kMeansOptions, null, 4)});`;
+    return <div className={"card bg-secondary shadow-xl flex-row m-4 justify-between"}
     >
-        <label htmlFor={"k"} className={""}>Clusters:
-        <input className={"bg-gray-700 p-1 rounded m-1 w-20"}
-               id={"k"}
-               type={"number"} value={kMeansOptions.k}
-               min={1}
-               onChange={event => {
-                   const options = {...kMeansOptions};
-                   options.k = parseInt(event.target.value);
-                   setKMeansOptions(options);
-               }}/>
-        </label>
-        <label htmlFor={"max_iterations"} className={""}>Iterations:
-        <input className={"bg-gray-700 p-1 rounded m-1 w-20"}
-               id={"max_iterations"}
-               type={"number"} value={kMeansOptions.max_iter}
-               min={0} max={10000}
-               step={10}
-               onChange={event => {
-                   const options = {...kMeansOptions};
-                   options.max_iter = parseInt(event.target.value);
-                   setKMeansOptions(options);
-               }}/>
-        </label>
-        <div className={""}>
-            <label className={"inline-block"}>Color space:</label>
-            <div className={"inline-block"}>
-                <label className={"p-1"}>
-                    <input type={"radio"} name={"color_space"} value={"RGB"}
-                           checked={kMeansOptions.color_space === "RGB"}
-                           onChange={() => {
+        <div className={"card-body flex-row w-full justify-between"}>
+            <div>
+                <label htmlFor={"k"} className={"label"}>
+                    <span className={"label-text text-secondary-content"}>Clusters:</span>
+                    <input className={"input max-w-24"}
+                           id={"k"}
+                           type={"number"} value={kMeansOptions.k}
+                           min={1}
+                           onChange={event => {
                                const options = {...kMeansOptions};
-                               options.color_space = "RGB";
+                               options.k = parseInt(event.target.value);
                                setKMeansOptions(options);
-                           }}
-                    /> RGB
+                           }}/>
                 </label>
-                <label className={"p-1"}>
-                    <input type={"radio"} name={"color_space"} value={"LAB"}
-                           checked={kMeansOptions.color_space === "LAB"}
-                           onChange={() => {
+                <label htmlFor={"max_iterations"} className={"label gap-4"}>
+                    <span className={"label-text text-secondary-content"}>Iterations:</span>
+                    <input className={"input max-w-24"}
+                           id={"max_iterations"}
+                           type={"number"} value={kMeansOptions.max_iter}
+                           min={0} max={10000}
+                           step={10}
+                           onChange={event => {
                                const options = {...kMeansOptions};
-                               options.color_space = "LAB";
+                               options.max_iter = parseInt(event.target.value);
                                setKMeansOptions(options);
-                           }}
-                    /> LAB
+                           }}/>
                 </label>
+                <div className={""}>
+                    <label className={"label justify-center gap-2"}>
+                        <span className={"label-text text-secondary-content"}>RGB</span>
+                        <input type={"checkbox"} className={"toggle"}
+                               onChange={e => {
+                                   const setToLab = e.target.checked;
+                                   const options = {...kMeansOptions};
+                                   if (setToLab) {
+                                       options.color_space = "LAB";
+                                   } else {
+                                       options.color_space = "RGB";
+                                   }
+                                   setKMeansOptions(options);
+                               }}
+                        />
+                        <span className={"label-text text-secondary-content"}>LAB</span>
+                    </label>
+                </div>
+            </div>
+            <div className={"rounded p-4 bg-black bg-opacity-50 text-accent-content"}>
+                {exampleCode.split('\n').map(line => <pre key={line}><code data-prefix={""}>{line}</code></pre>)}
             </div>
         </div>
-    </div>
+    </div>;
 }
 
 function Palette({palette}: { palette: Centroid[] }) {
