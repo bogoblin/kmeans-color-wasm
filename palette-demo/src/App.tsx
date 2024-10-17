@@ -153,7 +153,7 @@ function Controls({kMeansOptions, setKMeansOptions}: {
                     </label>
                 </div>
             </div>
-            <div className={"overflow-x-scroll rounded-lg p-4 bg-black bg-opacity-50"}>
+            <div className={"overflow-x-scroll rounded-lg p-4 bg-base-100 bg-opacity-50"}>
                 {exampleCode.split('\n').map(line => <pre key={line}><code data-prefix={""}>{line}</code></pre>)}
             </div>
         </div>
