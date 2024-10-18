@@ -20,11 +20,11 @@ function App() {
     const timeTaken = performance.now() - benchmarkStart;
 
     return (
-        <form className={"flex flex-col bg-base-100"}>
+        <form className={"flex flex-col bg-base-100 h-screen"}>
             <div className={"navbar"}>
                 <div className={"flex-1"}>
                     <span className={"btn btn-ghost text-xl"}>
-                         k-means palette generator
+                         palette generator
                     </span>
                 </div>
                 <div className={"flex-none"}>
@@ -40,7 +40,7 @@ function App() {
                         </li>
                     </ul>
                 </div>
-                <label className="swap swap-rotate">
+                <label className="swap swap-rotate pr-3">
                     {/* this hidden checkbox controls the state */}
                     <input type="checkbox" className="theme-controller" value="light"/>
 
@@ -82,10 +82,10 @@ function App() {
                         <p className={"text-base"}>or click to select a file</p>
                     </div>
                 </div>
-                <label className={"h-full"}
+                <label className={"flex flex-row justify-around h-full"}
                        htmlFor={"imageUpload"}>
                     {imageUrl ?
-                        <img className={"min-h-0 w-full h-full object-contain"}
+                        <img className={"min-h-0 h-full max-w-full object-contain"}
                              crossOrigin={"anonymous"}
                              src={imageUrl}
                              ref={imageElement}
