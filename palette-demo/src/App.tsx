@@ -170,7 +170,7 @@ function Palette({palette}: { palette: Centroid[] }) {
                     <Copiable text={( centroid.percentage * 100 ).toPrecision(2)+"%"}/>
                     <Copiable text={`rgb(${[...centroid.rgb].map(v => v.toFixed(0)).join(', ')})`}/>
                     <Copiable text={`lab(${[...centroid.lab].map(v => v.toFixed(2)).join(', ')})`}/>
-                    <Copiable text={`#${[...centroid.rgb].map(v => Math.floor(v).toString(16)).join(', ')})`}/>
+                    <Copiable text={`#${[...centroid.rgb].map(v => Math.floor(v).toString(16)).join('')})`}/>
                 </div>
             </div>
         })}
